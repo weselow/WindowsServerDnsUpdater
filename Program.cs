@@ -1,69 +1,62 @@
-using System.Diagnostics;
+using NLog;
+using NLog.Web;
+using System;
+using WindowsServerDnsUpdater;
 
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
+logger.Info("init main");
 
-// Метод для обновления DNS записи через PowerShell
-app.MapGet("/api/dnsupdate", (string action, string hostname, string ipAddress, string domain) =>
+try
 {
-    _ = Task.Run(() =>
+    var builder = WebApplication.CreateBuilder(args);
+    builder.Logging.ClearProviders();
+    builder.Host.UseNLog();
+    builder.Services.AddRazorPages();
+    var app = builder.Build();
+
+    app.UseStaticFiles();
+
+    // Добавляем маршруты для Razor Pages на верхнем уровне
+    app.MapRazorPages();
+
+    // Асинхронный метод для обновления DNS записи через PowerShell
+    app.MapGet("/api/dnsupdate", async (string action, string hostname, string ipAddress, string domain) =>
     {
-        try
+        logger.Info("Поступил запрос от Микротика: action {action}, hostname {hostname}, ip {ip}, domain {domain}", action, hostname, ipAddress, domain);
+
+        // Проверка на допустимые действия
+        if (action != "add" && action != "update" && action != "delete")
         {
-            string script = "";
-
-            // Проверка действия: добавление/изменение или удаление
-            if (action == "add" || action == "update")
-            {
-                // Формирование команды для добавления или изменения DNS записи
-                script = $"Add-DnsServerResourceRecordA -ZoneName '{domain}' -Name '{hostname}' -IPv4Address '{ipAddress}'";
-            }
-            else if (action == "delete")
-            {
-                // Формирование команды для удаления DNS записи
-                script = $"Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force";
-            }
-            else
-            {
-                // Используем Results.Content для возврата сообщения с статусом 400
-                return Results.Problem("Invalid action. Use 'add', 'update', or 'delete'.", statusCode: 400, type: "text/plain");
-            }
-
-            // Настройки процесса для запуска PowerShell
-            ProcessStartInfo psi = new ProcessStartInfo
-            {
-                FileName = "powershell",
-                Arguments = $"-Command \"{script}\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            Process process = new Process { StartInfo = psi };
-            process.Start();
-
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            // Проверка завершения процесса с ошибкой
-            if (process.ExitCode != 0)
-            {
-                // Используем Results.Content для возврата сообщения об ошибке с статусом 500
-                return Results.Problem($"Error executing action '{action}' on DNS: {error}", statusCode: 500, type: "text/plain");
-            }
-
-            return Results.Ok($"DNS record for {hostname}.{domain} {action}d successfully.");
+            // Возврат 400 Bad Request
+            return Results.Problem("Invalid action. Use 'add', 'update', or 'delete'.", statusCode: 400, type: "text/plain");
         }
-        catch (Exception ex)
+
+        // Выполнение асинхронной команды
+        var result = await DataBox.Run(action, hostname, ipAddress, domain);
+
+        // Проверка результата выполнения
+        if (result.Item1 != 0)
         {
-            // Логирование ошибки и возврат сообщения с статусом 500
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500, type: "text/plain");
+            logger.Error("Выполнение команды завершено с ошибкой: {message}", result.Item2);
+            return Results.Problem($"Error executing action '{action}' on DNS: {result.Item2}",
+                statusCode: 500, type: "text/plain");
         }
+
+        logger.Info("Команда выполнена успешно: {message}", result.Item2);
+        return Results.Ok($"DNS record for {hostname}.{domain} {action}d successfully.");
     });
-});
 
-// Запуск приложения
-app.Run();
+    // Запуск приложения
+    app.Run();
+}
+catch (Exception exception)
+{
+    // Логирование ошибок
+    logger.Error(exception, "Программа остановлена из-за исключения");
+    throw;
+}
+finally
+{
+    // Очищаем и останавливаем все процессы NLog
+    NLog.LogManager.Shutdown();
+}

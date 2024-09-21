@@ -1,0 +1,25 @@
+﻿@page
+@model WindowsServerDnsUpdater.Pages.IndexModel
+
+@{
+    ViewData["Title"] = "Главная страница";
+}
+
+<div class="container">
+    <h1>DNS Updater</h1>
+    <p>Это главная страница API. Используйте /api/dnsupdate для обновления DNS записей.</p>
+    <p>Last log records:</p>
+    @if (Model.LogLines.Count > 0)
+    {
+        <ul>
+            @foreach (var line in Model.LogLines)
+            {
+                <li>@line</li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p>Файл лога пуст или не существует.</p>
+    }
+</div>
