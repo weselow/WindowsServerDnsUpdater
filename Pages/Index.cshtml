@@ -8,15 +8,40 @@
 <div class="container">
     <h1>DNS Updater</h1>
     <p>Это главная страница API. Используйте /api/dnsupdate для обновления DNS записей.</p>
-    <p>Last log records:</p>
     @if (Model.LogLines.Count > 0)
     {
-        <ul>
-            @foreach (var line in Model.LogLines)
-            {
-                <li>@line</li>
-            }
-        </ul>
+        <table class="table table-responsive table-striped">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Level</th>
+                    <th>Сообщение</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach (var line in Model.LogLines)
+                {
+                    var bgcolor = string.Empty;
+                    switch (line.Level)
+                    {
+                        case "ERROR":
+                            bgcolor = "bg-danger";
+                            break;
+                        case "INFO":
+                        default: break;
+                    }
+                    <tr class="@bgcolor">
+                        <td>@line.Time</td>
+                        <td>@line.Level</td>
+                        <td>
+                            @line.Message<br />
+                            @line.Exception
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
     }
     else
     {

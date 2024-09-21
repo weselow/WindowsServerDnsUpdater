@@ -87,43 +87,6 @@ namespace WindowsServerDnsUpdater
                 return (1, ex.ToString());
             }
         }
-        public static List<string> GetLast50LinesReversed()
-        {
-            // Определяем путь к файлу
-            var logFilePath = Path.Combine(AppContext.BaseDirectory, "_logs", "log.txt");
-
-            try
-            {
-                // Проверяем существование файла
-                if (!File.Exists(logFilePath))
-                {
-                    Logger.Info("Файл не найден: {logFilePath}", logFilePath);
-                    return [];
-                }
-
-                // Список для хранения строк
-                var lines = new List<string>();
-
-                // Открываем файл с доступом для чтения и записи, разрешая другим процессам доступ к файлу
-                using (var fileStream = new FileStream(logFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                using (var streamReader = new StreamReader(fileStream))
-                {
-                    // Читаем файл построчно
-                    while (streamReader.ReadLine() is { } line)
-                    {
-                        lines.Add(line);
-                    }
-                }
-
-                // Возвращаем последние 50 строк в обратном порядке
-                lines.Reverse();
-                return lines.Take(50).ToList();
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Ошибка при чтении логов - {message}", e.Message);
-                return [];
-            }
-        }
+      
     }
 }

@@ -1,14 +1,17 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using NLog;
+using WindowsServerDnsUpdater.Data;
+using WindowsServerDnsUpdater.Models;
 
 namespace WindowsServerDnsUpdater.Pages
 {
     public class IndexModel : PageModel
     {
-        public List<string> LogLines { get; set; } = [];
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        public List<LogRecord> LogLines { get; set; } = [];
         public void OnGet()
         {
-            LogLines = DataBox.GetLast50LinesReversed();
+            LogLines = LoggingDbOperations.GetLogsAsync().GetAwaiter().GetResult();
         }
     }
 }

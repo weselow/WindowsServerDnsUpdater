@@ -1,7 +1,9 @@
 using NLog;
 using NLog.Web;
 using System;
+using Microsoft.EntityFrameworkCore;
 using WindowsServerDnsUpdater;
+using WindowsServerDnsUpdater.Data;
 
 var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Info("init main");
@@ -9,6 +11,13 @@ logger.Info("init main");
 try
 {
     var builder = WebApplication.CreateBuilder(args);
+
+    var connectionString = builder.Configuration.GetConnectionString("SqliteLogs");
+    LoggingDbContext.ConnectionString = connectionString ?? string.Empty;
+    builder.Services.AddDbContext<LoggingDbContext>(options =>
+        options.UseSqlite(connectionString));
+    logger.Info("Sqlite для логов подключена.");
+
     builder.Logging.ClearProviders();
     builder.Host.UseNLog();
     builder.Services.AddRazorPages();
