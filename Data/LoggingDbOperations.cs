@@ -149,5 +149,34 @@ namespace WindowsServerDnsUpdater.Data
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Id == id) ?? new LogRecord();
         }
+
+        public static Settings GetSettings()
+        {
+            while (true)
+            {
+                try
+                {
+                    Stopwatch sw = Stopwatch.StartNew();
+                    var result =  GetSettingsTask();
+                    sw.Stop();
+                    if (sw.ElapsedMilliseconds > 100)
+                        Logger.Info("Время выполнения запроса {method} к БД: {time} мс.", 
+                            nameof(GetSettingsTask), sw.ElapsedMilliseconds);
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Ошибка в методе {method}() - {message}.", 
+                        nameof(GetSettingsTask), ex.Message);
+                }
+                Thread.Sleep(2 * 1000);
+            }
+        }
+
+        private static Settings GetSettingsTask()
+        { 
+            using var db = new LoggingDbContext();
+            return db.Settings.FirstOrDefault() ?? new Settings();
+        }
     }
 }

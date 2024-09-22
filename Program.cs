@@ -4,6 +4,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using WindowsServerDnsUpdater;
 using WindowsServerDnsUpdater.Data;
+using WindowsServerDnsUpdater.Models;
 
 var logger = NLog.LogManager.Setup().LoadConfigurationFromAppSettings().GetCurrentClassLogger();
 logger.Info("init main");
@@ -12,14 +13,17 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
+    builder.Logging.ClearProviders();
+    builder.Host.UseNLog();
+
     var connectionString = builder.Configuration.GetConnectionString("SqliteLogs");
     LoggingDbContext.ConnectionString = connectionString ?? string.Empty;
     builder.Services.AddDbContext<LoggingDbContext>(options =>
         options.UseSqlite(connectionString));
     logger.Info("Sqlite для логов подключена.");
 
-    builder.Logging.ClearProviders();
-    builder.Host.UseNLog();
+    GlobalOptions.Settings = LoggingDbOperations.GetSettings();
+
     builder.Services.AddRazorPages();
     var app = builder.Build();
 
@@ -29,7 +33,7 @@ try
     app.MapRazorPages();
 
     // Асинхронный метод для обновления DNS записи через PowerShell
-    app.MapGet("/api/dnsupdate", async (string action, string hostname, string ipAddress, string domain) =>
+    app.MapGet("/api/dnsupdate", (string action, string hostname, string ipAddress, string domain) =>
     {
         logger.Info("Поступил запрос от Микротика: action {action}, hostname {hostname}, ip {ip}, domain {domain}", action, hostname, ipAddress, domain);
 
@@ -40,20 +44,20 @@ try
             return Results.Problem("Invalid action. Use 'add', 'update', or 'delete'.", statusCode: 400, type: "text/plain");
         }
 
-        // Выполнение асинхронной команды
-        var result = await DataBox.Run(action, hostname, ipAddress, domain);
-
-        // Проверка результата выполнения
-        if (result.Item1 != 0)
+        var newJob = new JobRecord()
         {
-            logger.Error("Выполнение команды завершено с ошибкой: {message}", result.Item2);
-            return Results.Problem($"Error executing action '{action}' on DNS: {result.Item2}",
-                statusCode: 500, type: "text/plain");
-        }
+            Action = action,
+            Hostname = hostname,
+            Ip = ipAddress,
+            Domain = domain
+        };
 
-        logger.Info("Команда выполнена успешно: {message}", result.Item2);
-        return Results.Ok($"DNS record for {hostname}.{domain} {action}d successfully.");
+        DataBox.Jobs.Enqueue(newJob);
+        
+        return Results.Ok($"Task to add DNS record for {hostname}.{domain} ({action}) - added successfully.");
     });
+
+    MikrotikOperations.Run();
 
     // Запуск приложения
     app.Run();

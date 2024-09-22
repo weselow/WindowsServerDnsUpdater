@@ -1,0 +1,50 @@
+﻿@page
+@model WindowsServerDnsUpdater.Pages.SettingsModel
+
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<h1>Настройки</h1>
+
+<h4>Settings</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Settings.Id" />
+            <div class="form-group">
+                <label asp-for="Settings.MikrotikIp" class="control-label"></label>
+                <input asp-for="Settings.MikrotikIp" class="form-control" />
+                <span asp-validation-for="Settings.MikrotikIp" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Settings.MikrotikLogin" class="control-label"></label>
+                <input asp-for="Settings.MikrotikLogin" class="form-control" />
+                <span asp-validation-for="Settings.MikrotikLogin" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Settings.MikrotikPassword" class="control-label"></label>
+                <input asp-for="Settings.MikrotikPassword" class="form-control" />
+                <span asp-validation-for="Settings.MikrotikPassword" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Settings.DefaultDomain" class="control-label"></label>
+                <input asp-for="Settings.DefaultDomain" class="form-control" />
+                <span asp-validation-for="Settings.DefaultDomain" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-success" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-page="./Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

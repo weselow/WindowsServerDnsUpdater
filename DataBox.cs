@@ -2,7 +2,11 @@
 using System.DirectoryServices.ActiveDirectory;
 using System.Net;
 using System;
+using System.Collections.Concurrent;
+using Microsoft.PowerShell.Commands;
 using NLog;
+using WindowsServerDnsUpdater.Models;
+using static System.Collections.Specialized.BitVector32;
 
 namespace WindowsServerDnsUpdater
 {
@@ -10,10 +14,12 @@ namespace WindowsServerDnsUpdater
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static string Powershell { get; set; } = string.Empty;
+        public static ConcurrentQueue<JobRecord> Jobs { get; set; } = new();
 
         static DataBox()
         {
             FindPowerShell7();
+            _ = RunJobsAsync();
         }
 
         private static bool FindPowerShell7()
@@ -39,7 +45,31 @@ namespace WindowsServerDnsUpdater
             Powershell = "powershell";
             return false;
         }
-        public static async Task<(int, string)> Run(string action, string hostname, string ipAddress, string domain)
+
+        private static async Task RunJobsAsync()
+        {
+            while (true)
+            {
+                if (Jobs.Count > 0)
+                    Logger.Info("Найдено {amount} заданий на изменение DNS записей.", Jobs.Count);
+
+                while (Jobs.TryDequeue(out var job))
+                {
+                    var result = await ExecuteJob(job.Action, job.Hostname, job.Ip, job.Domain);
+                    if (result.Item1 != 0)
+                    {
+                        Logger.Error("Выполнение команды завершено с ошибкой: {message}", result.Item2);
+                    }
+                    else
+                    {
+                        Logger.Info("Команда выполнена успешно: {message}", result.Item2);
+                    }
+                }
+                Thread.Sleep(5 * 1000);
+            }
+        }
+
+        public static async Task<(int, string)> ExecuteJob(string action, string hostname, string ipAddress, string domain)
         {
             try
             {
@@ -57,7 +87,6 @@ namespace WindowsServerDnsUpdater
                     script = $"Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force";
                 }
 
-
                 // Настройки процесса для запуска PowerShell
                 var psi = new ProcessStartInfo
                 {
@@ -69,7 +98,8 @@ namespace WindowsServerDnsUpdater
                     CreateNoWindow = true
                 };
                 Logger.Info("Запускаем команду для {hostname}: {cmd}", hostname, script);
-                var process = new Process { StartInfo = psi };
+                using var process = new Process();
+                process.StartInfo = psi;
                 process.Start();
 
                 var output = await process.StandardOutput.ReadToEndAsync();
@@ -83,10 +113,9 @@ namespace WindowsServerDnsUpdater
             }
             catch (Exception ex)
             {
-                // Логирование ошибки и возврат сообщения с статусом 500
                 return (1, ex.ToString());
             }
         }
-      
+
     }
 }

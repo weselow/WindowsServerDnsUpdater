@@ -7,6 +7,7 @@ namespace WindowsServerDnsUpdater.Data
     {
         public static string ConnectionString { get; set; } = string.Empty;
         public DbSet<LogRecord> LogEntries { get; set; }  // Таблица для логов
+        public DbSet<Settings> Settings { get; set; } 
 
         public LoggingDbContext()
         {
