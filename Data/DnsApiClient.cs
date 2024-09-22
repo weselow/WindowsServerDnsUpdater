@@ -30,6 +30,7 @@ namespace WindowsServerDnsUpdater.Data
         {
             try
             {
+                Logger.Info("Поступила задача создать/обновить dc: {domain}/ hostname: {hostname}/ ip:{ip}", domain, hostname, ipAddress);
                 using var zone = new DirectoryEntry(BuildLdapPath(domain));
 
                 // Поиск записи
@@ -70,6 +71,8 @@ namespace WindowsServerDnsUpdater.Data
         {
             try
             {
+                Logger.Info("Поступила задача удалить dc: {domain}/ hostname: {hostname}", domain, hostname);
+
                 using DirectoryEntry zone = new DirectoryEntry(BuildLdapPath(domain));
 
                 foreach (DirectoryEntry record in zone.Children)
