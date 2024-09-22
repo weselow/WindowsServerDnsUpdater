@@ -28,60 +28,72 @@ namespace WindowsServerDnsUpdater.Data
             }
             catch (Exception exception)
             {
-                Logger.Error(exception, "Ошибка в методе {method}() - {message}", 
+                Logger.Error(exception, "Ошибка в методе {method}() - {message}",
                     nameof(UpdateLeases), exception.Message);
             }
         }
 
         private static void UpdateLeases()
         {
-            if(string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikIp) 
-               || string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikLogin) ) return;
+            if (string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikIp)
+                || string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikLogin))
+            {
+                Logger.Info("Запрос к микротику leases не производим, нет данных.");
+                return;
+            }
 
             Stopwatch sw = Stopwatch.StartNew();
             var client = new MikrotikApiClient(ipAddress: GlobalOptions.Settings.MikrotikIp,
-                username:GlobalOptions.Settings.MikrotikLogin, 
-                password:GlobalOptions.Settings.MikrotikPassword);
+                username: GlobalOptions.Settings.MikrotikLogin,
+                password: GlobalOptions.Settings.MikrotikPassword);
             var leases = client.GetDhcpLeases();
             sw.Stop();
             Logger.Info("Получено {amount} lease записей от микротика за {timer} мс", leases.Count, sw.ElapsedMilliseconds);
 
-            var counter = 0;
-            foreach (var lease in leases)
+            try
             {
-                //если данные не изменились, и прошло еще меньше часа, то этот лиз пропускаем
-                if (Leases.TryGetValue(lease.ActiveMacAddress, out var item))
+                var counter = 0;
+
+                foreach (var lease in leases)
                 {
-                    if (item.Hostname == lease.HostName && item.Ip == lease.ActiveAddress &&
-                        DateTime.Now < item.LastUpdated.AddMinutes(LeaseUpdateDelay))
+                    //если данные не изменились, и прошло еще меньше часа, то этот лиз пропускаем
+                    if (Leases.TryGetValue(lease.ActiveMacAddress, out var item))
                     {
-                        continue;
+                        if (item.Hostname == lease.HostName && item.Ip == lease.ActiveAddress &&
+                            DateTime.Now < item.LastUpdated.AddMinutes(LeaseUpdateDelay))
+                        {
+                            continue;
+                        }
                     }
+
+                    //если что-то изменилось, то создаем задание,
+                    //добавляем его в локальный словарь и в список задач
+                    var job = new JobRecord()
+                    {
+                        Action = "add",
+                        Domain = GlobalOptions.Settings.DefaultDomain,
+                        Hostname = lease.HostName,
+                        Ip = lease.ActiveAddress,
+                        LastUpdated = DateTime.Now
+                    };
+
+                    //добавляем в словарь
+                    if (!Leases.TryAdd(lease.ActiveMacAddress, job))
+                    {
+                        Leases[lease.ActiveMacAddress] = job;
+                    }
+
+                    //добавляем в очередь
+                    DataBox.Jobs.Enqueue(job);
+                    counter++;
                 }
 
-                //если что-то изменилось, то создаем задание,
-                //добавляем его в локальный словарь и в список задач
-                var job = new JobRecord()
-                {
-                    Action = "add",
-                    Domain = GlobalOptions.Settings.DefaultDomain,
-                    Hostname = lease.HostName,
-                    Ip = lease.ActiveAddress,
-                    LastUpdated = DateTime.Now
-                };
-
-                //добавляем в словарь
-                if (!Leases.TryAdd(lease.ActiveMacAddress, job))
-                {
-                    Leases[lease.ActiveMacAddress] = job;
-                }
-
-                //добавляем в очередь
-                DataBox.Jobs.Enqueue(job);
-                counter++;
+                Logger.Info("Отправили на добавление {amount} leases от микротика.", counter);
             }
-
-            Logger.Info("Отправили на добавление {amount} leases от микротика.", counter);
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Ошибка при разборе leases от микротика - {message}", ex.Message);
+            }
             return;
         }
     }
