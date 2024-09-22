@@ -68,15 +68,17 @@
                 </dt>
                 <dd class="col-md-8">
                     <div class="form-check">
-                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input" type="radio" value="true" id="usePowerShellTrue" />
+                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input" 
+                               type="radio" value="true" id="usePowerShellTrue" />
                         <label class="form-check-label" for="usePowerShellTrue">
                             Использовать PowerShell
                         </label>
                     </div>
                     <div class="form-check">
-                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input" type="radio" value="false" id="usePowerShellFalse" />
+                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input"
+                        type="radio" value="false" id="usePowerShellFalse" />
                         <label class="form-check-label" for="usePowerShellFalse">
-                            Использовать Dns API
+                            Использовать DNS API
                         </label>
                     </div>
                     <span asp-validation-for="Settings.IfUsePowerShell" class="text-danger"></span>
