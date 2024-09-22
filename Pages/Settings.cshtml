@@ -61,6 +61,16 @@
                     <span asp-validation-for="Settings.DefaultDomain" class="text-danger"></span>
                 </dd>
             </dl>
+            
+            <dl class="row">
+                <dt class="col-md-4">
+                    <label asp-for="Settings.DnsServer" class="control-label"></label>
+                </dt>
+                <dd class="col-md-8">
+                    <input asp-for="Settings.DnsServer" class="form-control" />
+                    <span asp-validation-for="Settings.DnsServer" class="text-danger"></span>
+                </dd>
+            </dl>
 
             <dl class="row">
                 <dt class="col-md-4">

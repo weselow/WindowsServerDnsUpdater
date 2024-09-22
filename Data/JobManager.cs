@@ -28,13 +28,21 @@ namespace WindowsServerDnsUpdater.Data
 
                 while (DataCore.Jobs.TryDequeue(out var job))
                 {
-                    var result = (0, "");
+                    (int, string) result;
                     if (GlobalOptions.Settings.IfUsePowerShell)
                     {
                         result = await PowershellApiClient.ExecuteJob(action: job.Action,
                             domain: job.Domain,
                             hostname: job.Hostname, 
                             ipAddress: job.Ip);
+                        if (result.Item1 != 0)
+                        {
+                            Logger.Error("Выполнение команды завершено с ошибкой: {message}", result.Item2);
+                        }
+                        else
+                        {
+                            Logger.Info("Команда выполнена успешно: {message}", result.Item2);
+                        }
                     }
                     else
                     {
@@ -44,14 +52,7 @@ namespace WindowsServerDnsUpdater.Data
                             ipAddress: job.Ip);
                     }
 
-                    if (result.Item1 != 0)
-                    {
-                        Logger.Error("Выполнение команды завершено с ошибкой: {message}", result.Item2);
-                    }
-                    else
-                    {
-                        Logger.Info("Команда выполнена успешно: {message}", result.Item2);
-                    }
+                   
                 }
                 Thread.Sleep(5 * 1000);
             }

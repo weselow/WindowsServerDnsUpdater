@@ -16,6 +16,8 @@ namespace WindowsServerDnsUpdater.Data
         {
             ATimer = new System.Timers.Timer(60 * 1000) { AutoReset = true, Enabled = true };
             ATimer.Elapsed += OnTimedEvent;
+
+            OnTimedEvent(null, null);
         }
 
         public static bool Run() => true;
