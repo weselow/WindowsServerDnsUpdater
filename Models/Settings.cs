@@ -16,7 +16,11 @@ namespace WindowsServerDnsUpdater.Models
         [DataType(DataType.Password)]
         public string MikrotikPassword { get; set; } = string.Empty;
 
-        [Display(Name = "Домен по-умолчанию")]
+        [Display(Name = "Укажите вашу зону (example.com)")]
         public string DefaultDomain { get; set; } = "jabc.loc";
+
+        [Display(Name = "Укажите ваш DNS сервер (LDAP://your-dns-server)")]
+        public string DnsServer { get; set; } = "LDAP://127.0.0.1";
+        public bool IfUsePowerShell { get; set; } = false;
     }
 }

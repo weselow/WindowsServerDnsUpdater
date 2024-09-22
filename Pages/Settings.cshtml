@@ -4,47 +4,98 @@
 @{
     ViewData["Title"] = "Settings";
 }
+@section Styles
+{
+    <style>
+        .custom-margin {
+            margin-left: 15px; /* Настройте нужный отступ */
+        }
+    </style>
+}
 
 <h1>Настройки</h1>
 
-<h4>Settings</h4>
 <hr />
 <div class="row">
-    <div class="col-md-4">
-        <form method="post">
+    <div class="col-md-6">
+        <form method="post" class="mb-3">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Settings.Id" />
-            <div class="form-group">
-                <label asp-for="Settings.MikrotikIp" class="control-label"></label>
-                <input asp-for="Settings.MikrotikIp" class="form-control" />
-                <span asp-validation-for="Settings.MikrotikIp" class="text-danger"></span>
+
+            <dl class="row">
+                <dt class="col-md-4">
+                    <label asp-for="Settings.MikrotikIp" class="control-label"></label>
+                </dt>
+                <dd class="col-md-8">
+                    <input asp-for="Settings.MikrotikIp" class="form-control" />
+                    <span asp-validation-for="Settings.MikrotikIp" class="text-danger"></span>
+                </dd>
+            </dl>
+
+            <dl class="row">
+                <dt class="col-md-4">
+                    <label asp-for="Settings.MikrotikLogin" class="control-label"></label>
+                </dt>
+                <dd class="col-md-8">
+                    <input asp-for="Settings.MikrotikLogin" class="form-control" />
+                    <span asp-validation-for="Settings.MikrotikLogin" class="text-danger"></span>
+                </dd>
+            </dl>
+
+            <dl class="row">
+                <dt class="col-md-4">
+                    <label asp-for="Settings.MikrotikPassword" class="control-label"></label>
+                </dt>
+                <dd class="col-md-8">
+                    <input asp-for="Settings.MikrotikPassword" class="form-control" />
+                    <span asp-validation-for="Settings.MikrotikPassword" class="text-danger"></span>
+                </dd>
+            </dl>
+
+            <dl class="row">
+                <dt class="col-md-4">
+                    <label asp-for="Settings.DefaultDomain" class="control-label"></label>
+                </dt>
+                <dd class="col-md-8">
+                    <input asp-for="Settings.DefaultDomain" class="form-control" />
+                    <span asp-validation-for="Settings.DefaultDomain" class="text-danger"></span>
+                </dd>
+            </dl>
+
+            <dl class="row">
+                <dt class="col-md-4">
+                    <label>Метод работы с DNS</label>
+                </dt>
+                <dd class="col-md-8">
+                    <div class="form-check">
+                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input" type="radio" value="true" id="usePowerShellTrue" />
+                        <label class="form-check-label" for="usePowerShellTrue">
+                            Использовать PowerShell
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input" type="radio" value="false" id="usePowerShellFalse" />
+                        <label class="form-check-label" for="usePowerShellFalse">
+                            Использовать Dns API
+                        </label>
+                    </div>
+                    <span asp-validation-for="Settings.IfUsePowerShell" class="text-danger"></span>
+                </dd>
+            </dl>
+
+            <div class="row">
+                <div class="col-md-4 d-flex align-items-center">
+                    <input type="submit" value="Сохранить" class="btn btn-primary mr-3" />
+                    <a asp-page="./Index" class="custom-margin">Назад</a>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Settings.MikrotikLogin" class="control-label"></label>
-                <input asp-for="Settings.MikrotikLogin" class="form-control" />
-                <span asp-validation-for="Settings.MikrotikLogin" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Settings.MikrotikPassword" class="control-label"></label>
-                <input asp-for="Settings.MikrotikPassword" class="form-control" />
-                <span asp-validation-for="Settings.MikrotikPassword" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Settings.DefaultDomain" class="control-label"></label>
-                <input asp-for="Settings.DefaultDomain" class="form-control" />
-                <span asp-validation-for="Settings.DefaultDomain" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-success" />
-            </div>
+
         </form>
     </div>
 </div>
 
-<div>
-    <a asp-page="./Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

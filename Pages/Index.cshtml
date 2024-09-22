@@ -23,14 +23,15 @@
                 @foreach (var line in Model.LogLines)
                 {
                     var bgcolor = string.Empty;
-                    switch (line.Level)
+                    switch (line.Level.ToUpper())
                     {
                         case "ERROR":
-                            bgcolor = "bg-danger";
+                            bgcolor = "table-danger";
                             break;
                         case "INFO":
                         default: break;
                     }
+
                     <tr class="@bgcolor">
                         <td>@line.Time</td>
                         <td>@line.Level</td>

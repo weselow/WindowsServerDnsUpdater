@@ -20,10 +20,16 @@ try
         options.UseSqlite(connectionString));
     logger.Info("Sqlite для логов подключена.");
 
-    GlobalOptions.Settings = LoggingDbOperations.GetSettings();
-
     builder.Services.AddRazorPages();
     var app = builder.Build();
+
+    // Применение миграций при запуске
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<LoggingDbContext>();
+        dbContext.Database.Migrate(); // Применение миграций
+    }
+    GlobalOptions.Settings = LoggingDbOperations.GetSettings();
 
     app.UseStaticFiles();
 
@@ -56,6 +62,8 @@ try
     });
 
     MikrotikOperations.Run();
+    JobManager.Run();
+    logger.Info("Сервисы MikrotikOperations и JobManager запущены");
 
     // Запуск приложения
     app.Run();
