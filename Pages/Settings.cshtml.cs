@@ -45,6 +45,7 @@ namespace WindowsServerDnsUpdater.Pages
             {
                 _context.Update(Settings);
                 await _context.SaveChangesAsync();
+                Logger.Info("Настройки успешно сохранены в базу.");
             }
             catch (Exception e)
             {
