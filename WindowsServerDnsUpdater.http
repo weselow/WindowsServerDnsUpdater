@@ -1,6 +1,6 @@
 @WindowsServerDnsUpdater_HostAddress = http://localhost:5148
 
-GET {{WindowsServerDnsUpdater_HostAddress}}/weatherforecast/
+GET {{WindowsServerDnsUpdater_HostAddress}}/
 Accept: application/json
 
 ###

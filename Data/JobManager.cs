@@ -1,22 +1,16 @@
-﻿using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
-using System.Net;
-using System;
-using System.Collections.Concurrent;
-using Microsoft.PowerShell.Commands;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using NLog;
 using WindowsServerDnsUpdater.Models;
-using static System.Collections.Specialized.BitVector32;
 
-namespace WindowsServerDnsUpdater
+namespace WindowsServerDnsUpdater.Data
 {
-    public static class DataBox
+    public static class JobManager
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static string Powershell { get; set; } = string.Empty;
-        public static ConcurrentQueue<JobRecord> Jobs { get; set; } = new();
 
-        static DataBox()
+        static JobManager()
         {
             FindPowerShell7();
             _ = RunJobsAsync();
@@ -50,10 +44,10 @@ namespace WindowsServerDnsUpdater
         {
             while (true)
             {
-                if (Jobs.Count > 0)
-                    Logger.Info("Найдено {amount} заданий на изменение DNS записей.", Jobs.Count);
+                if (DataCore.Jobs.Count > 0)
+                    Logger.Info("Найдено {amount} заданий на изменение DNS записей.", DataCore.Jobs.Count);
 
-                while (Jobs.TryDequeue(out var job))
+                while (DataCore.Jobs.TryDequeue(out var job))
                 {
                     var result = await ExecuteJob(job.Action, job.Hostname, job.Ip, job.Domain);
                     if (result.Item1 != 0)

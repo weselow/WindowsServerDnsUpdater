@@ -1,8 +1,6 @@
 using NLog;
 using NLog.Web;
-using System;
 using Microsoft.EntityFrameworkCore;
-using WindowsServerDnsUpdater;
 using WindowsServerDnsUpdater.Data;
 using WindowsServerDnsUpdater.Models;
 
@@ -52,7 +50,7 @@ try
             Domain = domain
         };
 
-        DataBox.Jobs.Enqueue(newJob);
+        DataCore.Jobs.Enqueue(newJob);
         
         return Results.Ok($"Task to add DNS record for {hostname}.{domain} ({action}) - added successfully.");
     });

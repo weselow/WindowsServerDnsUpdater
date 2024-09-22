@@ -53,7 +53,7 @@ namespace WindowsServerDnsUpdater.Data
             try
             {
                 var counter = 0;
-
+                var jobs = new List<JobRecord>();
                 foreach (var lease in leases)
                 {
                     //если данные не изменились, и прошло еще меньше часа, то этот лиз пропускаем
@@ -84,9 +84,11 @@ namespace WindowsServerDnsUpdater.Data
                     }
 
                     //добавляем в очередь
-                    DataBox.Jobs.Enqueue(job);
+                    jobs.Add(job);
                     counter++;
                 }
+
+                foreach (var job in jobs) DataCore.Jobs.Enqueue(job);
 
                 Logger.Info("Отправили на добавление {amount} leases от микротика.", counter);
             }
