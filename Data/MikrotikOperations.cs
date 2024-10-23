@@ -92,7 +92,7 @@ namespace WindowsServerDnsUpdater.Data
 
                 foreach (var job in jobs) DataCore.Jobs.Enqueue(job);
 
-                Logger.Info("Отправили на добавление {amount} leases от микротика.", counter);
+                if (counter > 0) Logger.Info("Отправили на добавление {amount} leases от микротика.", counter);
             }
             catch (Exception ex)
             {
