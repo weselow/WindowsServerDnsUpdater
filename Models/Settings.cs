@@ -21,18 +21,17 @@ namespace WindowsServerDnsUpdater.Models
         [Display(Name = "Укажите вашу зону (example.com)")]
         public string DefaultDomain { get; set; } = "jabc.loc";
 
+        [Display(Name = "Название Vpn Sites Address List ")]
+        public string VpnSitesListName { get; set; } = "vpn_sites";
+
 
         [Display(Name = "Интервал регулярного запроса лизов от микротика(в секундах)")]
         public int LeaseUpdateDelaySeconds { get; set; } = 60;
 
-
-        [Display(Name = "Интервал обновления доменов из кеша (в секундах)")]
+        [Display(Name = "Интервал запросов доменов из кеша (в секундах)")]
         public int CacheUpdateIntervalSeconds { get; set; } = 5;
 
-        [Display(Name = "Название Vpn Sites Address List ")]
-        public string VpnSitesListName { get; set; } = "vpn_sites";
-
-        [Display(Name = "Интервал Mikrotik Address List (в секундах)")]
+        [Display(Name = "Интервал запросов Address List к Mikrotik'у (в секундах)")]
         public int VpnSitesListUpdateDelaySeconds { get; set; } = 5;
     }
 }

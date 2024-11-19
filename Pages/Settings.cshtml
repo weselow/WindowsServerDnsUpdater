@@ -64,6 +64,16 @@
             
             <dl class="row">
                 <dt class="col-md-6">
+                    <label asp-for="Settings.VpnSitesListName" class="control-label"></label>
+                </dt>
+                <dd class="col-md-6">
+                    <input asp-for="Settings.VpnSitesListName" class="form-control" />
+                    <span asp-validation-for="Settings.VpnSitesListName" class="text-danger"></span>
+                </dd>
+            </dl>
+            
+            <dl class="row">
+                <dt class="col-md-6">
                     <label asp-for="Settings.LeaseUpdateDelaySeconds" class="control-label"></label>
                 </dt>
                 <dd class="col-md-6">
@@ -79,16 +89,6 @@
                 <dd class="col-md-6">
                     <input asp-for="Settings.CacheUpdateIntervalSeconds" class="form-control" />
                     <span asp-validation-for="Settings.CacheUpdateIntervalSeconds" class="text-danger"></span>
-                </dd>
-            </dl>
-            
-            <dl class="row">
-                <dt class="col-md-6">
-                    <label asp-for="Settings.VpnSitesListName" class="control-label"></label>
-                </dt>
-                <dd class="col-md-6">
-                    <input asp-for="Settings.VpnSitesListName" class="form-control" />
-                    <span asp-validation-for="Settings.VpnSitesListName" class="text-danger"></span>
                 </dd>
             </dl>
             
