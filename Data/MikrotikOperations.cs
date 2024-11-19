@@ -1,6 +1,7 @@
 ﻿using NLog;
 using System.Diagnostics;
 using System.Timers;
+using tik4net.Objects.Ip.Firewall;
 using WindowsServerDnsUpdater.Models;
 
 namespace WindowsServerDnsUpdater.Data
@@ -8,34 +9,50 @@ namespace WindowsServerDnsUpdater.Data
     public static class MikrotikOperations
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private static System.Timers.Timer ATimer { get; set; }
         private static Dictionary<string, JobRecord> Leases { get; set; } = new();
-        private static int LeaseUpdateDelay { get; set; } = 60;
-
         static MikrotikOperations()
         {
-            ATimer = new System.Timers.Timer(60 * 1000) { AutoReset = true, Enabled = true };
-            ATimer.Elapsed += OnTimedEvent;
-
-            OnTimedEvent(null, null);
         }
 
-        public static bool Run() => true;
+        public static bool Run()
+        {
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    UpdateLeases();
+                    await Task.Delay(GlobalOptions.Settings.LeaseUpdateDelaySeconds * 1000);
+                }
+            });
 
-        private static void OnTimedEvent(object? source, ElapsedEventArgs? e)
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    GetVpnSitesList();
+                    await Task.Delay(GlobalOptions.Settings.VpnSitesListUpdateDelaySeconds * 1000);
+                }
+            });
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// Обновляем список лизов
+        /// </summary>
+        private static void UpdateLeases()
         {
             try
             {
-                UpdateLeases();
+                UpdateLeasesTask();
             }
             catch (Exception exception)
             {
-                Logger.Error(exception, "Ошибка в методе {method}() - {message}",
-                    nameof(UpdateLeases), exception.Message);
+                Logger.Error(exception, "Ошибка в методе {method}() - {message}", nameof(UpdateLeasesTask), exception.Message);
             }
         }
-
-        private static void UpdateLeases()
+        private static void UpdateLeasesTask()
         {
             if (string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikIp)
                 || string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikLogin))
@@ -62,7 +79,7 @@ namespace WindowsServerDnsUpdater.Data
                     if (Leases.TryGetValue(lease.ActiveMacAddress, out var item))
                     {
                         if (item.Hostname == lease.HostName && item.Ip == lease.ActiveAddress &&
-                            DateTime.Now < item.LastUpdated.AddMinutes(LeaseUpdateDelay))
+                            DateTime.Now < item.LastUpdated.AddSeconds(GlobalOptions.Settings.LeaseUpdateDelaySeconds))
                         {
                             continue;
                         }
@@ -98,6 +115,76 @@ namespace WindowsServerDnsUpdater.Data
             {
                 Logger.Error(ex, "Ошибка при разборе leases от микротика - {message}", ex.Message);
             }
+            return;
+        }
+
+
+        /// <summary>
+        /// Обновляем список vpn sites
+        /// </summary>
+        private static void GetVpnSitesList()
+        {
+            try
+            {
+                GetVpnSitesListTask();
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, "Ошибка в методе {method}() - {message}", nameof(GetVpnSitesListTask), exception.Message);
+            }
+        }
+        private static void GetVpnSitesListTask()
+        {
+            if (string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikIp)
+                || string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikLogin))
+            {
+                Logger.Info("Запрос к микротику leases не производим, нет данных.");
+                return;
+            }
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            var client = new MikrotikApiClient(ipAddress: GlobalOptions.Settings.MikrotikIp,
+                username: GlobalOptions.Settings.MikrotikLogin,
+                password: GlobalOptions.Settings.MikrotikPassword);
+
+            var vpnSitesList = client.GetFirewallAddressList(GlobalOptions.Settings.VpnSitesListName);
+
+            sw.Stop();
+            Logger.Info("Получено {amount} записей AddressList:{addressList}от микротика за {timer} мс", vpnSitesList.Count, GlobalOptions.Settings.VpnSitesListName, sw.ElapsedMilliseconds);
+
+            //получаем текущие записи в DNS кеше
+            var currentDomains = DomainCacheOperations.GetDomains();
+
+            //проходим по списку адресов и добавляем их в DNS кеш
+            foreach (var vpnSite in vpnSitesList)
+            {
+                //динамические пропускаем
+                if (vpnSite.Dynamic) continue;
+
+                //если домен уже есть в кеше, то пропускаем
+                if (currentDomains.Contains(vpnSite.Address)) continue;
+
+                if (DomainCacheOperations.TryAddDomain(vpnSite.Address))
+                {
+                    Logger.Info("В кеш доменов найден новый домен - {host}", vpnSite.Address);
+                }
+            }
+
+            //теперь в исходный адрес лист добавляем домены, которые там отсутствовали
+            var newDomains = new List<string>();
+            foreach (var domain in currentDomains)
+            {
+                if (vpnSitesList.Any(t => t.Address == domain)) continue;
+                newDomains.Add(domain);
+            }
+
+            //отправляем записи на микротик
+            client.AddDomainsToAddressList(newDomains, GlobalOptions.Settings.VpnSitesListName);
+
+            sw.Stop();
+            if (newDomains.Count > 0) Logger.Info("Отправили на добавление на микротик {amount} доменов за {timer}.", newDomains.Count, sw.ElapsedMilliseconds);
+
             return;
         }
     }

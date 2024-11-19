@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using NLog;
 
 namespace WindowsServerDnsUpdater.Data
@@ -36,7 +37,7 @@ namespace WindowsServerDnsUpdater.Data
             return false;
         }
 
-        public static async Task<(int, string)> ExecuteJob(string action, string hostname, string ipAddress, string domain)
+        public static async Task<(int, string)> ExecuteJobAsync(string action, string hostname, string ipAddress, string domain)
         {
             try
             {
@@ -46,12 +47,15 @@ namespace WindowsServerDnsUpdater.Data
                 if (action == "add" || action == "update")
                 {
                     // Формирование команды для добавления или изменения DNS записи
-                    script = $"Add-DnsServerResourceRecordA -ZoneName '{domain}' -Name '{hostname}' -IPv4Address '{ipAddress}'";
+                    // script = $"Add-DnsServerResourceRecordA -ZoneName '{domain}' -Name '{hostname}' -IPv4Address '{ipAddress}'";
+                    script = $"if (-not (Get-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -ErrorAction SilentlyContinue)) {{ Add-DnsServerResourceRecordA -ZoneName '{domain}' -Name '{hostname}' -IPv4Address '{ipAddress}' }}";
                 }
                 else
                 {
                     // Формирование команды для удаления DNS записи
-                    script = $"Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force";
+                    // script = $"Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force";
+                    script = $"if (Get-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -ErrorAction SilentlyContinue) {{ Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force }}";
+
                 }
                 Logger.Info("Сформировали команду: {cmd}", script);
 
@@ -77,6 +81,48 @@ namespace WindowsServerDnsUpdater.Data
                 Logger.Info("Команда для {hostname} завершена {cmd}", hostname, script);
 
                 return (process.ExitCode, $"Standart output:\n{output}\n\nError output:\n{error}");
+
+            }
+            catch (Exception ex)
+            {
+                return (1, ex.ToString());
+            }
+        }
+
+        public static async Task<(int, string)> GetDomainAsJsonFromCacheAsync(string domain)
+        {
+            if (string.IsNullOrEmpty(domain)) return (1, string.Empty);
+
+            try
+            {
+                var script = $"Get-DnsServerResourceRecord -ZoneName \".\" -ComputerName \"localhost\" | Where-Object {{ $_.HostName -like \"*{domain}*\" }} | Select-Object -ExpandProperty HostName | ConvertTo-Json -Depth 3";
+                
+                Logger.Info("Сформировали команду: {cmd}", script);
+
+                // Настройки процесса для запуска PowerShell
+                var psi = new ProcessStartInfo
+                {
+                    FileName = Powershell,
+                    Arguments = $"-Command \"{script}\"",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                Logger.Info("Запускаем команду {cmd}", script);
+                using var process = new Process();
+                process.StartInfo = psi;
+
+                Logger.Info("Запускаем команду {cmd}", script);
+                process.Start();
+
+                var output = await process.StandardOutput.ReadToEndAsync();
+                var error = await process.StandardError.ReadToEndAsync();
+                
+                await process.WaitForExitAsync();
+                Logger.Info("Результат команды {cmd} - output: {output}, error: {errorOutput}", script, output, error);
+
+                return (process.ExitCode, output);
 
             }
             catch (Exception ex)

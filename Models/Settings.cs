@@ -4,6 +4,8 @@ namespace WindowsServerDnsUpdater.Models
 {
     public class Settings
     {
+        internal int LeaseUpdateDelaySeconds;
+
         public int Id { get; set; }
 
         [Display(Name="IP Микротика")]
@@ -18,9 +20,14 @@ namespace WindowsServerDnsUpdater.Models
 
         [Display(Name = "Укажите вашу зону (example.com)")]
         public string DefaultDomain { get; set; } = "jabc.loc";
+        
+        [Display(Name = "Интервал обновления доменов из кеша (в секундах)")]
+        public int CacheUpdateIntervalSeconds { get; set; } = 5;
 
-        [Display(Name = "Укажите ваш DNS сервер (LDAP://your-dns-server)")]
-        public string DnsServer { get; set; } = "LDAP://127.0.0.1";
-        public bool IfUsePowerShell { get; set; } = false;
+        [Display(Name = "Название Vpn Sites Address List ")]
+        public string VpnSitesListName { get; set; } = "vpn_sites";
+
+        [Display(Name = "Интервал Mikrotik Address List (в секундах)")]
+        public int VpnSitesListUpdateDelaySeconds { get; set; } = 5;
     }
 }

@@ -64,36 +64,34 @@
             
             <dl class="row">
                 <dt class="col-md-4">
-                    <label asp-for="Settings.DnsServer" class="control-label"></label>
+                    <label asp-for="Settings.CacheUpdateIntervalSeconds" class="control-label"></label>
                 </dt>
                 <dd class="col-md-8">
-                    <input asp-for="Settings.DnsServer" class="form-control" />
-                    <span asp-validation-for="Settings.DnsServer" class="text-danger"></span>
+                    <input asp-for="Settings.CacheUpdateIntervalSeconds" class="form-control" />
+                    <span asp-validation-for="Settings.CacheUpdateIntervalSeconds" class="text-danger"></span>
                 </dd>
             </dl>
-
+            
             <dl class="row">
                 <dt class="col-md-4">
-                    <label>Метод работы с DNS</label>
+                    <label asp-for="Settings.VpnSitesListName" class="control-label"></label>
                 </dt>
                 <dd class="col-md-8">
-                    <div class="form-check">
-                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input" 
-                               type="radio" value="true" id="usePowerShellTrue" />
-                        <label class="form-check-label" for="usePowerShellTrue">
-                            Использовать PowerShell
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input asp-for="Settings.IfUsePowerShell" class="form-check-input"
-                        type="radio" value="false" id="usePowerShellFalse" />
-                        <label class="form-check-label" for="usePowerShellFalse">
-                            Использовать DNS API
-                        </label>
-                    </div>
-                    <span asp-validation-for="Settings.IfUsePowerShell" class="text-danger"></span>
+                    <input asp-for="Settings.VpnSitesListName" class="form-control" />
+                    <span asp-validation-for="Settings.VpnSitesListName" class="text-danger"></span>
                 </dd>
             </dl>
+            
+            <dl class="row">
+                <dt class="col-md-4">
+                    <label asp-for="Settings.VpnSitesListUpdateDelaySeconds" class="control-label"></label>
+                </dt>
+                <dd class="col-md-8">
+                    <input asp-for="Settings.VpnSitesListUpdateDelaySeconds" class="form-control" />
+                    <span asp-validation-for="Settings.VpnSitesListUpdateDelaySeconds" class="text-danger"></span>
+                </dd>
+            </dl>
+           
 
             <div class="row">
                 <div class="col-md-4 d-flex align-items-center">

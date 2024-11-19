@@ -4,9 +4,10 @@ using System;
 using System.DirectoryServices;
 using WindowsServerDnsUpdater.Models;
 
-namespace WindowsServerDnsUpdater.Data
+namespace WindowsServerDnsUpdater.Archive
 {
 #pragma warning disable CA1416
+    /*
     public static class DnsApiClient
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -141,6 +142,7 @@ namespace WindowsServerDnsUpdater.Data
         }
 
     }
+    */
 
 #pragma warning restore CA1416
 }

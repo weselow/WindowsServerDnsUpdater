@@ -47,22 +47,16 @@ try
             // Возврат 400 Bad Request
             return Results.Problem("Invalid action. Use 'add', 'update', or 'delete'.", statusCode: 400, type: "text/plain");
         }
-
-        var newJob = new JobRecord()
-        {
-            Action = action,
-            Hostname = hostname,
-            Ip = ipAddress,
-            Domain = domain
-        };
-
-        DataCore.Jobs.Enqueue(newJob);
+        
+        JobManager.AddJob(action, hostname, ipAddress, domain);
         
         return Results.Ok($"Task to add DNS record for {hostname}.{domain} ({action}) - added successfully.");
     });
 
     MikrotikOperations.Run();
+    DomainCacheOperations.Run();
     JobManager.Run();
+
     logger.Info("Сервисы MikrotikOperations и JobManager запущены");
 
     // Запуск приложения

@@ -1,0 +1,13 @@
+# получить из кеша днс записи
+Get-DnsServerResourceRecord -ZoneName "." -ComputerName "localhost" | Where-Object { $_.HostName -like "*myip*" }
+
+# получить из кеша днс записи и вернуть в json
+Get-DnsServerResourceRecord -ZoneName "." -ComputerName "localhost" | 
+    Where-Object { $_.HostName -like "*myip*" } | 
+    ConvertTo-Json -Depth 3 | 
+    Out-File -FilePath "C:\Path\To\output.json" -Encoding UTF8
+
+#просто вывести список доменов из кеша
+Get-DnsServerResourceRecord -ZoneName "." -ComputerName "localhost" | 
+Where-Object { $_.HostName -like "*tailscale*" } | 
+Select-Object -ExpandProperty HostName
