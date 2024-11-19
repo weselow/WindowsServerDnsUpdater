@@ -3,7 +3,16 @@
 @{
     ViewData["Title"] = "Что делает это приложение?";
 }
-@{
+@section Styles
+{
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.1.0/github-markdown.min.css">
+        <style>
+            .markdown-content {
+                background-color: #ffffff;
+                padding: 20px;
+                border-radius: 5px;
+            }
+        </style>
 }
  
 <h1>@ViewData["Title"]</h1>
