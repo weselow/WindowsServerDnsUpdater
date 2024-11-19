@@ -15,20 +15,32 @@ try
     builder.Host.UseNLog();
 
     var connectionString = builder.Configuration.GetConnectionString("SqliteLogs");
-    LoggingDbContext.ConnectionString = connectionString ?? string.Empty;
-    builder.Services.AddDbContext<LoggingDbContext>(options =>
-        options.UseSqlite(connectionString));
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        throw new InvalidOperationException("Строка подключения 'SqliteLogs' не найдена.");
+    }
+
+    builder.Services.AddDbContext<LoggingDbContext>(options => options.UseSqlite(connectionString));
     logger.Info("Sqlite для логов подключена.");
 
     builder.Services.AddRazorPages();
     var app = builder.Build();
 
+
     // Применение миграций при запуске
-    using (var scope = app.Services.CreateScope())
+    try
     {
+        using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<LoggingDbContext>();
         dbContext.Database.Migrate(); // Применение миграций
     }
+    catch (Exception ex)
+    {
+        logger.Error(ex, "Ошибка при применении миграций базы данных.");
+        throw; // Прерываем запуск, если миграция не удалась
+    }
+
+    LoggingDbOperations.Initialize(app.Services);
     GlobalOptions.Settings = LoggingDbOperations.GetSettings();
 
     app.UseStaticFiles();

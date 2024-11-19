@@ -1,0 +1,78 @@
+﻿@page
+@model WindowsServerDnsUpdater.Pages.VpnSitesModel
+@{
+    ViewData["Title"] = "Сайты с доступом через VPN";
+}
+@section Styles
+{
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+} 
+@section Scripts {
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+}
+
+
+<div class="container mt-5">
+    <h1 class="text-center mb-4">@ViewData["Title"]</h1>
+    <div class="row">
+        <div class="col-md-12">
+            <form method="post" class="mb-3">
+                <div class="row">
+                    <div class="col-12">
+                        <p>В кеше DNS сервера будут найдены все домены, содержащие введенный текст.<br/>
+                            Если указан url, то из него будет извлечен и добавлен только домен.</p>
+                    </div>
+                    <div class="col-10">
+                        <input name="domain" asp-for="Domain" class="form-control" placeholder="example, example.com, https://example.com/index.html"/>
+                    </div>
+                    <div class="col-2">
+                        <input type="submit" value="Добавить" class="btn btn-primary btn-sm"/>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row">
+        <h3>Список доменов и поддоменов:</h3>
+    </div>
+
+    <div class="accordion col-6" id="domainAccordion">
+
+        @foreach (var key in Model.DomainList.Keys)
+        {
+            <div class="accordion-item">
+
+                <div class="row">
+                    <h2 class="accordion-header " id="headingDomain-@key">
+                        <button class="accordion-button bg-light text-dark" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseDomain-@key" aria-expanded="true" aria-controls="collapseDomain-@key">
+                            @key
+                        </button>
+                    </h2>
+                </div>
+
+                <div id="collapseDomain-@key" class="accordion-collapse collapse show"
+                     aria-labelledby="headingDomain-@key" data-bs-parent="#domainAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group">
+                            @foreach (var subomain in Model.DomainList[key])
+                            {
+                                <li class="list-group-item">
+                                    <div class="row">
+                                        <div class="col-10">@subomain</div>
+                                        <div class="col-2">
+                                            <a asp-page-handler="Delete" asp-route-domain="@subomain"
+                                               class="text-danger text-end">Удалить</a>
+                                        </div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

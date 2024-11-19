@@ -8,7 +8,7 @@ namespace WindowsServerDnsUpdater.Data
     public static class JobManager
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
+        public static ConcurrentQueue<JobRecord> Jobs { get; set; } = new();
         static JobManager()
         {
         }
@@ -35,17 +35,17 @@ namespace WindowsServerDnsUpdater.Data
                 Domain = domain
             };
 
-            DataCore.Jobs.Enqueue(newJob);
+            Jobs.Enqueue(newJob);
             Task.Run(RunJobsAsync);
             return true;
         }
 
         private static async Task RunJobsAsync()
         {
-            if (DataCore.Jobs.Count > 0)
-                Logger.Info("Найдено {amount} заданий на изменение DNS записей.", DataCore.Jobs.Count);
+            if (Jobs.Count > 0)
+                Logger.Info("Найдено {amount} заданий на изменение DNS записей.", Jobs.Count);
 
-            while (DataCore.Jobs.TryDequeue(out var job))
+            while (Jobs.TryDequeue(out var job))
             {
                 var result = await PowershellApiClient.ExecuteJobAsync(action: job.Action,
                     domain: job.Domain,
@@ -55,12 +55,10 @@ namespace WindowsServerDnsUpdater.Data
                 {
                     Logger.Error("Выполнение команды завершено с ошибкой: {message}", result.Item2);
                 }
-                else
-                {
-                    Logger.Info("Команда выполнена успешно: {message}", result.Item2);
-                }
             }
             return;
         }
+
+       
     }
 }

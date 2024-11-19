@@ -1,0 +1,25 @@
+﻿.markdown-content {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+    .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+    }
+
+    .markdown-content p {
+        margin: 10px 0;
+    }
+
+    .markdown-content code {
+        background-color: #f4f4f4;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: Consolas, Monaco, monospace;
+    }

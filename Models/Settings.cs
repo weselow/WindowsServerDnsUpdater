@@ -4,7 +4,7 @@ namespace WindowsServerDnsUpdater.Models
 {
     public class Settings
     {
-        internal int LeaseUpdateDelaySeconds;
+       
 
         public int Id { get; set; }
 
@@ -20,7 +20,12 @@ namespace WindowsServerDnsUpdater.Models
 
         [Display(Name = "Укажите вашу зону (example.com)")]
         public string DefaultDomain { get; set; } = "jabc.loc";
-        
+
+
+        [Display(Name = "Интервал регулярного запроса лизов от микротика(в секундах)")]
+        public int LeaseUpdateDelaySeconds { get; set; } = 60;
+
+
         [Display(Name = "Интервал обновления доменов из кеша (в секундах)")]
         public int CacheUpdateIntervalSeconds { get; set; } = 5;
 

@@ -37,8 +37,18 @@ namespace WindowsServerDnsUpdater.Data
             return false;
         }
 
-        public static async Task<(int, string)> ExecuteJobAsync(string action, string hostname, string ipAddress, string domain)
+        public static async Task<(int, string)> ExecuteJobAsync(string action, string hostname, string ipAddress,
+            string domain)
         {
+            if (string.IsNullOrEmpty(action) 
+                || string.IsNullOrEmpty(ipAddress) 
+                || string.IsNullOrEmpty(domain) 
+                || string.IsNullOrEmpty(hostname))
+
+            {
+                return (1, $"Одно из полей для команды передано пустым - action:'{action}', hostname:'{hostname}', ipAddress:'{ipAddress}', domain:'{domain}'.");
+            }
+
             try
             {
                 var script = "";
@@ -57,7 +67,6 @@ namespace WindowsServerDnsUpdater.Data
                     script = $"if (Get-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -ErrorAction SilentlyContinue) {{ Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force }}";
 
                 }
-                Logger.Info("Сформировали команду: {cmd}", script);
 
                 // Настройки процесса для запуска PowerShell
                 var psi = new ProcessStartInfo
@@ -78,7 +87,13 @@ namespace WindowsServerDnsUpdater.Data
                 var error = await process.StandardError.ReadToEndAsync();
 
                 await process.WaitForExitAsync();
-                Logger.Info("Команда для {hostname} завершена {cmd}", hostname, script);
+                if (!string.IsNullOrEmpty(output) || !string.IsNullOrEmpty(error))
+                {
+                    Logger.ForInfoEvent()
+                        .Message("Команда для {hostname} завершена, standartOutput: {standartOutput}, errorOutput: {errorOutput} .", hostname, output, error)
+                        .Property("cmd", script) 
+                        .Log();
+                }
 
                 return (process.ExitCode, $"Standart output:\n{output}\n\nError output:\n{error}");
 
@@ -96,7 +111,7 @@ namespace WindowsServerDnsUpdater.Data
             try
             {
                 var script = $"Get-DnsServerResourceRecord -ZoneName \".\" -ComputerName \"localhost\" | Where-Object {{ $_.HostName -like \"*{domain}*\" }} | Select-Object -ExpandProperty HostName | ConvertTo-Json -Depth 3";
-                
+
                 Logger.Info("Сформировали команду: {cmd}", script);
 
                 // Настройки процесса для запуска PowerShell
@@ -118,7 +133,7 @@ namespace WindowsServerDnsUpdater.Data
 
                 var output = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
-                
+
                 await process.WaitForExitAsync();
                 Logger.Info("Результат команды {cmd} - output: {output}, error: {errorOutput}", script, output, error);
 

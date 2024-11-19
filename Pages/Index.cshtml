@@ -2,14 +2,21 @@
 @model WindowsServerDnsUpdater.Pages.IndexModel
 
 @{
-    ViewData["Title"] = "Главная страница";
+    ViewData["Title"] = "Windows Server DNS Updater";
 }
 
 <div class="container">
-    <h1>Главная</h1>
-    <p>Это главная страница API. Используйте /api/dnsupdate для обновления DNS записей.</p>
+    
+    <p>Данная приложение решает 2 задачи:</p>
+    <ul>
+        <li>Обновляет Windows DNS Server данными от DHCP сервера микротика, поскольку родного механизма нет, а есть только варианты через костыли.</li>
+        <li>Автоматически добавляет в VPN тоннель поддомены сайтов, которые блокируют пользователей из России.</li>
+    </ul>
+    <p>Механизм работы описан на странице <a asp-page="/About">О программе</a>.</p>
+    <p><b>API:</b> Используйте /api/dnsupdate для обновления DNS записей.</p>
     @if (Model.LogLines.Count > 0)
     {
+        <h3>Лог работы:</h3>
         <table class="table table-responsive table-striped">
             <thead>
                 <tr>

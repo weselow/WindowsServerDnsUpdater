@@ -97,5 +97,39 @@ namespace WindowsServerDnsUpdater.Data
 
             return true;
         }
+
+        public List<string> RemoveDomainsFromAddressList(List<FirewallAddressList> deletedDomains, string vpnSitesListName)
+        {
+            var result = new List<string>();
+            if(!deletedDomains.Any()) return result;
+
+            {
+                try
+                {
+                    using var connection = ConnectionFactory.OpenConnection(TikConnectionType.Api, _ipAddress, _username, _password);
+
+                    foreach (var entry in deletedDomains)
+                    {
+                        try
+                        {
+                            // Удаление записи
+                            connection.Delete(entry);
+                            result.Add(entry.Address);
+                            Logger.Info("Удалена запись {domain} для AddresssList:{addressList}", entry.Address, vpnSitesListName);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Info(ex, "Ошибка при удалении из AddresssList записи {domain}: {message}", entry.Address, ex.Message);
+                        }
+                    }
+                    
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Ошибка при подключении к MikroTik для добавления записей: {message}", e.Message);
+                }
+                return result;
+            }
+        }
     }
 }

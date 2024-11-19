@@ -16,6 +16,7 @@ namespace WindowsServerDnsUpdater.Data
 
         public static bool Run()
         {
+            //обновление dns записей из dhcp leases
             Task.Run(async () =>
             {
                 while (true)
@@ -25,6 +26,7 @@ namespace WindowsServerDnsUpdater.Data
                 }
             });
 
+            //обновление списка vpn sites
             Task.Run(async () =>
             {
                 while (true)
@@ -57,7 +59,7 @@ namespace WindowsServerDnsUpdater.Data
             if (string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikIp)
                 || string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikLogin))
             {
-                Logger.Info("Запрос к микротику leases не производим, нет данных.");
+                Logger.Info("Запрос к микротику dhcp leases не производим, нет логина/пароля.");
                 return;
             }
 
@@ -67,7 +69,7 @@ namespace WindowsServerDnsUpdater.Data
                 password: GlobalOptions.Settings.MikrotikPassword);
             var leases = client.GetDhcpLeases();
             sw.Stop();
-            Logger.Info("Получено {amount} lease записей от микротика за {timer} мс", leases.Count, sw.ElapsedMilliseconds);
+            Logger.Info("Получено {amount} dhcp lease записей от микротика за {timer} мс", leases.Count, sw.ElapsedMilliseconds);
 
             try
             {
@@ -107,7 +109,7 @@ namespace WindowsServerDnsUpdater.Data
                     counter++;
                 }
 
-                foreach (var job in jobs) DataCore.Jobs.Enqueue(job);
+                foreach (var job in jobs) JobManager.Jobs.Enqueue(job);
 
                 if (counter > 0) Logger.Info("Отправили на добавление {amount} leases от микротика.", counter);
             }
@@ -138,7 +140,8 @@ namespace WindowsServerDnsUpdater.Data
             if (string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikIp)
                 || string.IsNullOrEmpty(GlobalOptions.Settings.MikrotikLogin))
             {
-                Logger.Info("Запрос к микротику leases не производим, нет данных.");
+
+                Logger.Info("Запрос к микротику к AddressList {addressList} не производим, нет данных.", GlobalOptions.Settings.VpnSitesListName);
                 return;
             }
 
@@ -151,7 +154,19 @@ namespace WindowsServerDnsUpdater.Data
             var vpnSitesList = client.GetFirewallAddressList(GlobalOptions.Settings.VpnSitesListName);
 
             sw.Stop();
-            Logger.Info("Получено {amount} записей AddressList:{addressList}от микротика за {timer} мс", vpnSitesList.Count, GlobalOptions.Settings.VpnSitesListName, sw.ElapsedMilliseconds);
+            Logger.Info("Получено {amount} записей AddressList:{addressList} от микротика за {timer} мс", vpnSitesList.Count, GlobalOptions.Settings.VpnSitesListName, sw.ElapsedMilliseconds);
+
+
+            //выбираем записи, которые будут удалены из AddressList
+            var deletedDomains = DomainCacheOperations.GetDeletedDomains();
+            var toDeleteRecords = new List<FirewallAddressList>();
+            foreach (var domain in deletedDomains)
+            {
+                var list = vpnSitesList.Where(t => t.Address.Contains(domain)).ToList();
+                toDeleteRecords.AddRange(list);
+            }
+            var finaldeletedDomains = client.RemoveDomainsFromAddressList(toDeleteRecords, GlobalOptions.Settings.VpnSitesListName);
+            DomainCacheOperations.TryRemoveDeletedDomains(finaldeletedDomains);
 
             //получаем текущие записи в DNS кеше
             var currentDomains = DomainCacheOperations.GetDomains();
@@ -163,11 +178,12 @@ namespace WindowsServerDnsUpdater.Data
                 if (vpnSite.Dynamic) continue;
 
                 //если домен уже есть в кеше, то пропускаем
-                if (currentDomains.Contains(vpnSite.Address)) continue;
+                if (currentDomains.Contains(vpnSite.Address.ToLower())) continue;
+                if (deletedDomains.Contains(vpnSite.Address.ToLower())) continue;
 
                 if (DomainCacheOperations.TryAddDomain(vpnSite.Address))
                 {
-                    Logger.Info("В кеш доменов найден новый домен - {host}", vpnSite.Address);
+                    Logger.Info("Добавлен новый домен для поиска в кеше: {host}", vpnSite.Address);
                 }
             }
 
@@ -175,15 +191,16 @@ namespace WindowsServerDnsUpdater.Data
             var newDomains = new List<string>();
             foreach (var domain in currentDomains)
             {
-                if (vpnSitesList.Any(t => t.Address == domain)) continue;
+                if (vpnSitesList.Any(t => t.Address.ToLower() == domain)) continue;
                 newDomains.Add(domain);
             }
 
             //отправляем записи на микротик
             client.AddDomainsToAddressList(newDomains, GlobalOptions.Settings.VpnSitesListName);
 
+
             sw.Stop();
-            if (newDomains.Count > 0) Logger.Info("Отправили на добавление на микротик {amount} доменов за {timer}.", newDomains.Count, sw.ElapsedMilliseconds);
+            if (newDomains.Count > 0) Logger.Info("Отправили на добавление на микротик в AddressList {amount} доменов за {timer}.", newDomains.Count, sw.ElapsedMilliseconds);
 
             return;
         }

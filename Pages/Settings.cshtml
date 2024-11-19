@@ -23,70 +23,80 @@
             <input type="hidden" asp-for="Settings.Id" />
 
             <dl class="row">
-                <dt class="col-md-4">
+                <dt class="col-md-6">
                     <label asp-for="Settings.MikrotikIp" class="control-label"></label>
                 </dt>
-                <dd class="col-md-8">
+                <dd class="col-md-6">
                     <input asp-for="Settings.MikrotikIp" class="form-control" />
                     <span asp-validation-for="Settings.MikrotikIp" class="text-danger"></span>
                 </dd>
             </dl>
 
             <dl class="row">
-                <dt class="col-md-4">
+                <dt class="col-md-6">
                     <label asp-for="Settings.MikrotikLogin" class="control-label"></label>
                 </dt>
-                <dd class="col-md-8">
+                <dd class="col-md-6">
                     <input asp-for="Settings.MikrotikLogin" class="form-control" />
                     <span asp-validation-for="Settings.MikrotikLogin" class="text-danger"></span>
                 </dd>
             </dl>
 
             <dl class="row">
-                <dt class="col-md-4">
+                <dt class="col-md-6">
                     <label asp-for="Settings.MikrotikPassword" class="control-label"></label>
                 </dt>
-                <dd class="col-md-8">
+                <dd class="col-md-6">
                     <input asp-for="Settings.MikrotikPassword" class="form-control" />
                     <span asp-validation-for="Settings.MikrotikPassword" class="text-danger"></span>
                 </dd>
             </dl>
 
             <dl class="row">
-                <dt class="col-md-4">
+                <dt class="col-md-6">
                     <label asp-for="Settings.DefaultDomain" class="control-label"></label>
                 </dt>
-                <dd class="col-md-8">
+                <dd class="col-md-6">
                     <input asp-for="Settings.DefaultDomain" class="form-control" />
                     <span asp-validation-for="Settings.DefaultDomain" class="text-danger"></span>
                 </dd>
             </dl>
             
             <dl class="row">
-                <dt class="col-md-4">
+                <dt class="col-md-6">
+                    <label asp-for="Settings.LeaseUpdateDelaySeconds" class="control-label"></label>
+                </dt>
+                <dd class="col-md-6">
+                    <input asp-for="Settings.LeaseUpdateDelaySeconds" class="form-control" />
+                    <span asp-validation-for="Settings.LeaseUpdateDelaySeconds" class="text-danger"></span>
+                </dd>
+            </dl>
+            
+            <dl class="row">
+                <dt class="col-md-6">
                     <label asp-for="Settings.CacheUpdateIntervalSeconds" class="control-label"></label>
                 </dt>
-                <dd class="col-md-8">
+                <dd class="col-md-6">
                     <input asp-for="Settings.CacheUpdateIntervalSeconds" class="form-control" />
                     <span asp-validation-for="Settings.CacheUpdateIntervalSeconds" class="text-danger"></span>
                 </dd>
             </dl>
             
             <dl class="row">
-                <dt class="col-md-4">
+                <dt class="col-md-6">
                     <label asp-for="Settings.VpnSitesListName" class="control-label"></label>
                 </dt>
-                <dd class="col-md-8">
+                <dd class="col-md-6">
                     <input asp-for="Settings.VpnSitesListName" class="form-control" />
                     <span asp-validation-for="Settings.VpnSitesListName" class="text-danger"></span>
                 </dd>
             </dl>
             
             <dl class="row">
-                <dt class="col-md-4">
+                <dt class="col-md-6">
                     <label asp-for="Settings.VpnSitesListUpdateDelaySeconds" class="control-label"></label>
                 </dt>
-                <dd class="col-md-8">
+                <dd class="col-md-6">
                     <input asp-for="Settings.VpnSitesListUpdateDelaySeconds" class="form-control" />
                     <span asp-validation-for="Settings.VpnSitesListUpdateDelaySeconds" class="text-danger"></span>
                 </dd>
@@ -94,7 +104,7 @@
            
 
             <div class="row">
-                <div class="col-md-4 d-flex align-items-center">
+                <div class="col-md-6 d-flex align-items-center">
                     <input type="submit" value="Сохранить" class="btn btn-primary mr-3" />
                     <a asp-page="./Index" class="custom-margin">Назад</a>
                 </div>

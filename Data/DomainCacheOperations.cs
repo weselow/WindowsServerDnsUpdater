@@ -13,6 +13,7 @@ namespace WindowsServerDnsUpdater.Data
 
         //ключ имя домена, значение список хостов
         public static ConcurrentDictionary<string, List<string>> DomainCache { get; set; } = new();
+        public static ConcurrentDictionary<string, List<string>> DeletedDomains { get; set; } = new();
         static DomainCacheOperations()
         {
          
@@ -40,18 +41,21 @@ namespace WindowsServerDnsUpdater.Data
 
         public static bool TryAddDomain(string domain)
         {
-            return DomainCache.TryAdd(domain, new());
+            if (string.IsNullOrEmpty(domain)) return false;
+            return DomainCache.TryAdd(domain.ToLower(), new());
         }
         public static List<string> GetDomains() => DomainCache.Keys.ToList();
+        public static List<string> GetDeletedDomains() => DeletedDomains.Keys.ToList();
 
         private static async Task<bool> GetDomainsFromCacheAsync()
         {
             Stopwatch sw = Stopwatch.StartNew();
+
             //формирум таблицу доменов для запросов
             var domainList = new List<string>();
             foreach (var cacheKey in DomainCache.Keys)
             {
-                if (DomainCache.Keys.Any(t => cacheKey.EndsWith(t))) continue;
+                if (DomainCache.Keys.Any(t => cacheKey != t && cacheKey.Contains(t))) continue;
                 domainList.Add(cacheKey);
             }
 
@@ -69,9 +73,9 @@ namespace WindowsServerDnsUpdater.Data
 
                 foreach (var host in hosts)
                 {
-                    if (DomainCache.TryAdd(host, new()))
+                    if (DomainCache.TryAdd(host.ToLower(), new()))
                     {
-                        Logger.Info("В кеше доменов найден новый домен - {host}", host);
+                        Logger.Warn("В кеше доменов найден новый домен - {host}", host);
                     }
                 }
             }
@@ -94,6 +98,29 @@ namespace WindowsServerDnsUpdater.Data
             }
 
             return new();
+        }
+
+        /// <summary>
+        /// Удаляем домены, если пришла такая команда
+        /// </summary>
+        /// <param name="domain"></param>
+        public static void TryRemoveDomain(string domain)
+        {
+            if(string.IsNullOrEmpty(domain)) return;
+            var keys = DomainCache.Keys.Where(t => t.Contains(domain)).ToList();
+            foreach (var key in keys) DomainCache.TryRemove(key, out _);
+            DeletedDomains.TryAdd(domain, new());
+        }
+
+        /// <summary>
+        /// Финальное удаление доменов, которые были удалены с микротика
+        /// </summary>
+        /// <param name="finaldeletedDomains"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        public static void TryRemoveDeletedDomains(List<string> finaldeletedDomains)
+        {
+            if (!finaldeletedDomains.Any()) return;
+            foreach (var key in finaldeletedDomains) DeletedDomains.TryRemove(key, out _);
         }
     }
 }

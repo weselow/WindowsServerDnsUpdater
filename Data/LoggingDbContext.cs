@@ -5,14 +5,9 @@ namespace WindowsServerDnsUpdater.Data
 {
     public sealed class LoggingDbContext : DbContext
     {
-        public static string ConnectionString { get; set; } = string.Empty;
-        public DbSet<LogRecord> LogEntries { get; set; }  // Таблица для логов
-        public DbSet<Settings> Settings { get; set; } 
-
-        public LoggingDbContext()
-        {
-            Database.EnsureCreated();
-        }
+        // public static string ConnectionString { get; set; } = string.Empty;
+        public DbSet<LogRecord> LogEntries { get; set; } = null!;
+        public DbSet<Settings> Settings { get; set; } = null!;
 
         public LoggingDbContext(DbContextOptions<LoggingDbContext> options) : base(options)
         {
@@ -21,15 +16,15 @@ namespace WindowsServerDnsUpdater.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            if (!optionsBuilder.IsConfigured)
-            {
-                if (string.IsNullOrEmpty(ConnectionString))
-                {
-                    throw new InvalidOperationException("The SqlLite ConnectionString property has not been initialized.");
-                }
+            //if (!optionsBuilder.IsConfigured)
+            //{
+            //    if (string.IsNullOrEmpty(ConnectionString))
+            //    {
+            //        throw new InvalidOperationException("The SqlLite ConnectionString property has not been initialized.");
+            //    }
 
-                optionsBuilder.UseSqlite(ConnectionString);
-            }
+            //    optionsBuilder.UseSqlite(ConnectionString);
+            //}
         }
 
         // Настройка модели базы данных
