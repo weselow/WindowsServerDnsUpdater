@@ -110,10 +110,8 @@ namespace WindowsServerDnsUpdater.Data
 
             try
             {
-                var script = $"Get-DnsServerResourceRecord -ZoneName \".\" -ComputerName \"localhost\" | Where-Object {{ $_.HostName -like \"*{domain}*\" }} | Select-Object -ExpandProperty HostName | ConvertTo-Json -Depth 3";
-
-                Logger.Info("Сформировали команду: {cmd}", script);
-
+                var script = $"Get-DnsServerResourceRecord -ZoneName '.' -ComputerName 'localhost' | Where-Object {{ $_.HostName -like '*{domain}*' }} | Select-Object -ExpandProperty HostName | ConvertTo-Json -Depth 3";
+                
                 // Настройки процесса для запуска PowerShell
                 var psi = new ProcessStartInfo
                 {
@@ -127,15 +125,16 @@ namespace WindowsServerDnsUpdater.Data
                 Logger.Info("Запускаем команду {cmd}", script);
                 using var process = new Process();
                 process.StartInfo = psi;
-
-                Logger.Info("Запускаем команду {cmd}", script);
                 process.Start();
 
                 var output = await process.StandardOutput.ReadToEndAsync();
                 var error = await process.StandardError.ReadToEndAsync();
 
                 await process.WaitForExitAsync();
-                Logger.Info("Результат команды {cmd} - output: {output}, error: {errorOutput}", script, output, error);
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Logger.Error("Результат команды {cmd} - output: {output}, error: {errorOutput}", script, output, error);
+                }
 
                 return (process.ExitCode, output);
 

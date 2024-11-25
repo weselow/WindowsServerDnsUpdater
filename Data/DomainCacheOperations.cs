@@ -90,11 +90,24 @@ namespace WindowsServerDnsUpdater.Data
             if (string.IsNullOrEmpty(json)) return new();
             try
             {
-                return JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                if (json.Contains('[') && json.Contains(']'))
+                {
+                    return JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                }
+                else
+                {
+                    var data = JsonSerializer.Deserialize<string>(json) ?? string.Empty;
+                    return new() { data };
+                }
+              
             }
             catch (Exception e)
             {
-               Logger.Error(e,"Ошибка в методе {method}() - {message}",nameof(DeserialyzeJson), e.Message);
+               Logger.ForErrorEvent()
+                   .Message("Ошибка в методе {method}() - {message}",nameof(DeserialyzeJson), e.Message)
+                   .Exception(e)
+                   .Property("json",json)
+                   .Log();
             }
 
             return new();

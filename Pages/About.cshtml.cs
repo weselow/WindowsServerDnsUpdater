@@ -1,8 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.IO;
 using Markdig;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace WindowsServerDnsUpdater.Pages
 {

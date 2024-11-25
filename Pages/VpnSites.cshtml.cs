@@ -29,10 +29,11 @@ namespace WindowsServerDnsUpdater.Pages
             }
         }
 
-        public void OnGetDelete(string domain)
+        public IActionResult OnGetDelete(string domain)
         {
-            if (string.IsNullOrEmpty(domain) || domain.Length < 4) return;
+            if (string.IsNullOrEmpty(domain) || domain.Length < 4) return RedirectToPage("./VpnSites");
             DomainCacheOperations.TryRemoveDomain(domain);
+            return RedirectToPage("./VpnSites");
         }
         public IActionResult OnPost()
         {
