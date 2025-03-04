@@ -34,7 +34,7 @@ namespace WindowsServerDnsUpdater.Data
             }
             catch (Exception e)
             {
-                Logger.Error(e,"Ошибка при получении данных от микротика - {message}", e.Message);
+                Logger.Error(e, "Ошибка при получении данных от микротика - {message}", e.Message);
             }
 
             return new();
@@ -51,12 +51,12 @@ namespace WindowsServerDnsUpdater.Data
                 // Выполняем запрос на получение address-list с указанным именем
                 vpnSites = connection.LoadList<FirewallAddressList>()
                     .Where(x => x.List == addressListName)
-                    .Select(t=>t)
+                    .Select(t => t)
                     .ToList();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex,"Ошибка при подключении к MikroTik или выполнении команды: {ex.Message}", ex.Message);
+                Logger.Error(ex, "Ошибка при подключении к MikroTik или выполнении команды: {ex.Message}", ex.Message);
             }
 
             return vpnSites;
@@ -64,24 +64,26 @@ namespace WindowsServerDnsUpdater.Data
 
         public bool AddDomainsToAddressList(List<string> domains, string addressListName)
         {
-            if(!domains.Any()) return false;
+            if (!domains.Any()) return false;
 
             try
             {
                 using var connection = ConnectionFactory.OpenConnection(TikConnectionType.Api, _ipAddress, _username, _password);
-                
+
                 foreach (var domain in domains)
                 {
                     try
-                    {       var addressListEntry = new FirewallAddressList
-                            {
-                                Address = domain,
-                                List = addressListName,
-                                Comment = $"Added from domain cache {domain}"
-                            };
-                            connection.Save(addressListEntry);
-                          Logger.Info("Mikrotik: добавлен домен {domain} в список {addressListName}", domain, addressListName);
-                        
+                    {
+                        var addressListEntry = new FirewallAddressList
+                        {
+                            Address = domain,
+                            List = addressListName,
+                            Comment = $"Added from domain cache {domain}",
+                            //Timeout = "1d 00:00:00"
+                        };
+                        connection.Save(addressListEntry);
+                        Logger.Info("Mikrotik: добавлен домен {domain} в список {addressListName}", domain, addressListName);
+
                     }
                     catch (Exception ex)
                     {
@@ -101,7 +103,7 @@ namespace WindowsServerDnsUpdater.Data
         public List<string> RemoveDomainsFromAddressList(List<FirewallAddressList> deletedDomains, string vpnSitesListName)
         {
             var result = new List<string>();
-            if(!deletedDomains.Any()) return result;
+            if (!deletedDomains.Any()) return result;
 
             {
                 try
@@ -122,7 +124,7 @@ namespace WindowsServerDnsUpdater.Data
                             Logger.Info(ex, "Ошибка при удалении из AddresssList записи {domain}: {message}", entry.Address, ex.Message);
                         }
                     }
-                    
+
                 }
                 catch (Exception e)
                 {

@@ -1,6 +1,8 @@
 ﻿using NLog;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Security.Policy;
 using System.Text.Json;
 using System.Timers;
 using WindowsServerDnsUpdater.Models;
@@ -16,7 +18,7 @@ namespace WindowsServerDnsUpdater.Data
         public static ConcurrentDictionary<string, List<string>> DeletedDomains { get; set; } = new();
         static DomainCacheOperations()
         {
-         
+
         }
 
         public static void Run()
@@ -28,11 +30,11 @@ namespace WindowsServerDnsUpdater.Data
                     try
                     {
                         await GetDomainsFromCacheAsync();
-                      
+
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e,"Ошибка в методе {method}() - {message}", nameof(GetDomainsFromCacheAsync), e.Message );
+                        Logger.Error(e, "Ошибка в методе {method}() - {message}", nameof(GetDomainsFromCacheAsync), e.Message);
                     }
                     await Task.Delay(GlobalOptions.Settings.CacheUpdateIntervalSeconds * 1000);
                 }
@@ -44,6 +46,32 @@ namespace WindowsServerDnsUpdater.Data
             if (string.IsNullOrEmpty(domain)) return false;
             return DomainCache.TryAdd(domain.ToLower(), new());
         }
+
+        public static async Task<bool> TryAddDomainUrlAsync(string domainUrl)
+        {
+            if (string.IsNullOrEmpty(domainUrl) || !domainUrl.ToLower().StartsWith("http")) return false;
+
+            try
+            {
+                var httpClient = new HttpClient();
+                var response = await httpClient.GetAsync(domainUrl);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var result = new List<string>(content.Split('\n', StringSplitOptions.RemoveEmptyEntries));
+
+                foreach (var domain in result) TryAddDomain(domain);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Ошибка при получении списка доменов - {message}", ex.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+
         public static List<string> GetDomains() => DomainCache.Keys.ToList();
         public static List<string> GetDeletedDomains() => DeletedDomains.Keys.ToList();
 
@@ -61,7 +89,7 @@ namespace WindowsServerDnsUpdater.Data
 
             if (domainList.Count == 0) return false;
 
-            
+
             foreach (var domain in domainList)
             {
                 var json = await PowershellApiClient.GetDomainAsJsonFromCacheAsync(domain);
@@ -81,7 +109,7 @@ namespace WindowsServerDnsUpdater.Data
             }
 
             sw.Stop();
-            Logger.Info("Обновление кеша {amount} доменов завершено за {timer} мс",domainList.Count, sw.ElapsedMilliseconds);
+            Logger.Info("Обновление кеша {amount} доменов завершено за {timer} мс", domainList.Count, sw.ElapsedMilliseconds);
 
             return true;
         }
@@ -99,15 +127,15 @@ namespace WindowsServerDnsUpdater.Data
                     var data = JsonSerializer.Deserialize<string>(json) ?? string.Empty;
                     return new() { data };
                 }
-              
+
             }
             catch (Exception e)
             {
-               Logger.ForErrorEvent()
-                   .Message("Ошибка в методе {method}() - {message}",nameof(DeserialyzeJson), e.Message)
-                   .Exception(e)
-                   .Property("json",json)
-                   .Log();
+                Logger.ForErrorEvent()
+                    .Message("Ошибка в методе {method}() - {message}", nameof(DeserialyzeJson), e.Message)
+                    .Exception(e)
+                    .Property("json", json)
+                    .Log();
             }
 
             return new();
@@ -119,7 +147,7 @@ namespace WindowsServerDnsUpdater.Data
         /// <param name="domain"></param>
         public static void TryRemoveDomain(string domain)
         {
-            if(string.IsNullOrEmpty(domain)) return;
+            if (string.IsNullOrEmpty(domain)) return;
             var keys = DomainCache.Keys.Where(t => t.Contains(domain)).ToList();
             foreach (var key in keys) DomainCache.TryRemove(key, out _);
             DeletedDomains.TryAdd(domain, new());
@@ -135,5 +163,7 @@ namespace WindowsServerDnsUpdater.Data
             if (!finaldeletedDomains.Any()) return;
             foreach (var key in finaldeletedDomains) DeletedDomains.TryRemove(key, out _);
         }
+
+
     }
 }

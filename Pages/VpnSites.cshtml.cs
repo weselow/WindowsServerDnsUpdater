@@ -6,8 +6,8 @@ namespace WindowsServerDnsUpdater.Pages
 {
     public class VpnSitesModel : PageModel
     {
-        [BindProperty]
-        public string Domain { get; set; } = string.Empty;
+        [BindProperty] public string Domain { get; set; } = string.Empty;
+        [BindProperty] public string DomainUrl { get; set; } = string.Empty;
         public Dictionary<string, List<string>> DomainList { get; set; } = [];
         public void OnGet()
         {
@@ -47,6 +47,7 @@ namespace WindowsServerDnsUpdater.Pages
             }
 
             DomainCacheOperations.TryAddDomain(Domain);
+            _ = DomainCacheOperations.TryAddDomainUrlAsync(DomainUrl).GetAwaiter().GetResult();
             return  RedirectToPage("./VpnSites");
         }
     }
