@@ -68,9 +68,10 @@ public static ConcurrentQueue<JobRecord> Jobs { get; set; } = new();
 
 ### 4. PowershellApiClient
 Выполняет команды PowerShell для управления Windows DNS Server:
-- `Add-DnsServerResourceRecordA` - добавление записей
-- `Remove-DnsServerResourceRecord` - удаление записей
+- `Add-DnsServerResourceRecordA` - добавление записей **с TTL 12 часов**
+- `Set-DnsServerResourceRecord` - обновление записей **с продлением TTL на 12 часов**
 - `Get-DnsServerResourceRecord` - получение существующих записей
+- **Удаление записей отключено** согласно новой политике
 
 ### 5. DomainCacheOperations
 Управляет кешем доменов для мониторинга:
@@ -82,8 +83,28 @@ public static ConcurrentDictionary<string, List<string>> DomainCache { get; set;
 
 1. **DHCP событие на MikroTik** → отправка запроса на `/api/dnsupdate`
 2. **JobManager** → добавление задачи в очередь
-3. **PowershellApiClient** → выполнение DNS команды
+3. **PowershellApiClient** → выполнение DNS команды с TTL 12 часов
 4. **Периодическая синхронизация** → обновление данных между MikroTik и DNS
+
+## Политика управления DNS записями
+
+### Добавление записей (action="add")
+- **Проверяется существование записи** с таким же именем
+- Если запись **существует**: обновляется IP адрес и **TTL продлевается на 12 часов**
+- Если запись **не существует**: создается новая DNS запись с **TTL 12 часов**
+- Команда: `Get-DnsServerResourceRecord` → `Set-DnsServerResourceRecord` или `Add-DnsServerResourceRecordA`
+
+### Обновление записей (action="update")
+- **Аналогична логике добавления**
+- Проверяется существование записи
+- Если запись **существует**: обновляется IP адрес и **TTL продлевается на 12 часов**
+- Если запись **не существует**: создается новая с TTL 12 часов
+- Команда: `Get-DnsServerResourceRecord` → `Set-DnsServerResourceRecord` или `Add-DnsServerResourceRecordA`
+
+### Удаление записей (action="delete")
+- **Удаление записей отключено** согласно новой политике
+- Запросы на удаление логируются и игнорируются
+- Записи автоматически удаляются по истечении TTL (12 часов)
 
 ## Стандарты кодирования
 

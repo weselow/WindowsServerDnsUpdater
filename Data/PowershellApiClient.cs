@@ -53,19 +53,34 @@ namespace WindowsServerDnsUpdater.Data
             {
                 var script = "";
 
-                // Проверка действия: добавление/изменение или удаление
+                // Проверка действия: добавление/изменение (удаление больше не поддерживается)
                 if (action == "add" || action == "update")
                 {
-                    // Формирование команды для добавления или изменения DNS записи
-                    // script = $"Add-DnsServerResourceRecordA -ZoneName '{domain}' -Name '{hostname}' -IPv4Address '{ipAddress}'";
-                    script = $"if (-not (Get-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -ErrorAction SilentlyContinue)) {{ Add-DnsServerResourceRecordA -ZoneName '{domain}' -Name '{hostname}' -IPv4Address '{ipAddress}' }}";
+                    // Универсальная логика для add и update:
+                    // 1. Проверяем существование записи
+                    // 2. Если существует - обновляем IP и продлеваем TTL на 12 часов
+                    // 3. Если не существует - создаем новую с TTL 12 часов
+                    script = $"$record = Get-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -ErrorAction SilentlyContinue; " +
+                             $"if ($record) {{ " +
+                             $"$newRecord = $record.Clone(); " +
+                             $"$newRecord.RecordData.IPv4Address = '{ipAddress}'; " +
+                             $"$newRecord.TimeToLive = '12:00:00'; " +
+                             $"Set-DnsServerResourceRecord -ZoneName '{domain}' -OldInputObject $record -NewInputObject $newRecord; " +
+                             $"Write-Host 'Запись {hostname}.{domain} обновлена с продлением TTL на 12 часов' " +
+                             $"}} else {{ " +
+                             $"Add-DnsServerResourceRecordA -ZoneName '{domain}' -Name '{hostname}' -IPv4Address '{ipAddress}' -TimeToLive '12:00:00'; " +
+                             $"Write-Host 'Создана новая запись {hostname}.{domain} с TTL 12 часов' " +
+                             $"}}";
+                }
+                else if (action == "delete")
+                {
+                    // Удаление записей больше не производим - просто логируем и возвращаем успех
+                    Logger.Info("Запрос на удаление записи {hostname}.{domain} проигнорирован согласно новой политике", hostname, domain);
+                    return (0, "Удаление записей отключено согласно новой политике");
                 }
                 else
                 {
-                    // Формирование команды для удаления DNS записи
-                    // script = $"Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force";
-                    script = $"if (Get-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -ErrorAction SilentlyContinue) {{ Remove-DnsServerResourceRecord -ZoneName '{domain}' -Name '{hostname}' -RRType A -Force }}";
-
+                    return (1, $"Неподдерживаемое действие: {action}. Поддерживаются только 'add' и 'update'.");
                 }
 
                 // Настройки процесса для запуска PowerShell
